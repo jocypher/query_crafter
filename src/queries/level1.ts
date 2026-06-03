@@ -34,9 +34,6 @@ export async function getUserWithProfile(req: Request, res: Response) {
     const users = await userRepo.find({
       relations: {
         profile: true,
-        lessons: true,
-        comments: true,
-        role: true,
       },
     });
     if (users.length == 0) {
@@ -161,6 +158,7 @@ export async function getSubscriptionByUserAndPlans(
     const subscriptions = await subscriptionRepo.find({
       relations: {
         plan: true,
+        user:true
       },
     });
     if (subscriptions.length == 0) {
@@ -173,6 +171,65 @@ export async function getSubscriptionByUserAndPlans(
     return res.status(200).json({
       success: true,
       data: subscriptions,
+    });
+  } catch (error) {
+    throw error;
+  }
+}
+
+/**
+Get all media attached to contents (Level 3)
+Retrieve lessons created by a specific user (Level 3)
+ */
+
+export async function getMediaWithContents(req: Request, res: Response) {
+  try {
+    const media = await mediaRepo.find({
+      relations: {
+        contents: true,
+      },
+    });
+
+    if (!media || media.length == 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No media with contents found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      data: media,
+    });
+  } catch (error) {
+    console.error("Error occurred", error);
+    throw error;
+  }
+}
+
+export async function getLessonsByUserId(req: Request, res: Response) {
+  try {
+    const userId = req.params.id as string;
+
+    const lessons = await lessonRepo.find({
+      where: {
+        author: {
+          id: userId,
+        },
+      },
+      relations: {
+        author: true,
+      },
+    });
+
+    if (!lessons || lessons.length == 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No Lessons found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      data: lessons,
     });
   } catch (error) {
     throw error;
