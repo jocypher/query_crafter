@@ -9,10 +9,13 @@ Find lessons with both media and comments attached (Level 7)
 import { Request, Response } from "express";
 import { Content } from "../db/entities/Content";
 import { Lesson } from "../db/entities/Lesson";
+import { User } from "../db/entities/User";
+import { Plan } from "../db/entities/SubscriptionPlan";
 
 const contentRepo = AppDataSource.getRepository(Content);
 const lessonsRepo = AppDataSource.getRepository(Lesson);
-
+const userRepo = AppDataSource.getRepository(User);
+const planRepo = AppDataSource.getRepository(Plan);
 export async function getContentsWithMostComments(req: Request, res: Response) {
   try {
     const qb = contentRepo
@@ -26,7 +29,8 @@ export async function getContentsWithMostComments(req: Request, res: Response) {
       .limit(1)
       .getRawOne();
 
-    const max = maxCommentCount ?? 0;
+    console.log(maxCommentCount);
+    const max = maxCommentCount.comments_count ?? 0;
 
     const contentsWithMostComments = await qb
       .having("COUNT(comments.id) = :count", { count: max })
@@ -50,7 +54,10 @@ export async function getContentsWithMostComments(req: Request, res: Response) {
   }
 }
 
-export async function getLessonsByTotalCommentsCount(req: Request, res: Response) {
+export async function getLessonsByTotalCommentsCount(
+  req: Request,
+  res: Response,
+) {
   try {
     const qb = lessonsRepo
       .createQueryBuilder("lessons")
@@ -77,5 +84,46 @@ export async function getLessonsByTotalCommentsCount(req: Request, res: Response
       success: false,
       message: `Server occurred ${error}`,
     });
+  }
+}
+
+export async function getUsersByTotalComments(req: Request, res: Response) {
+  try {
+    const result = await userRepo
+      .createQueryBuilder("user")
+      .leftJoin("user.comments", "comments")
+      .addSelect("COUNT(comments.id)", "comment_count")
+      .orderBy("COUNT(comments.id)", "DESC")
+      .getRawMany();
+
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "No comments with user found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: `Server error occurred: ${error}`,
+    });
+  }
+}
+
+export async function getActivePlansAndExpiredSubscription(
+  req: Request,
+  res: Response,
+) {
+  try {
+    const qb = planRepo
+      .createQueryBuilder("plan")
+      .leftJoin("plan.subscriptions", "subscriptions")
+      .leftJoin("")
+  } catch (error) {
+    return;
   }
 }
