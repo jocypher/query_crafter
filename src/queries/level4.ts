@@ -11,6 +11,7 @@ import { Content } from "../db/entities/Content";
 import { Lesson } from "../db/entities/Lesson";
 import { User } from "../db/entities/User";
 import { Plan } from "../db/entities/SubscriptionPlan";
+import { SubscriptionStatus } from "../core/enum/subscriptionStatus";
 
 const contentRepo = AppDataSource.getRepository(Content);
 const lessonsRepo = AppDataSource.getRepository(Lesson);
@@ -122,7 +123,17 @@ export async function getActivePlansAndExpiredSubscription(
     const qb = planRepo
       .createQueryBuilder("plan")
       .leftJoin("plan.subscriptions", "subscriptions")
-      .leftJoin("")
+      .where("subscriptions.status = :activeStatus", {activeStatus: SubscriptionStatus.ACTIVE})
+      .orWhere("subscription.status = :expiredStatus",{expiredStatus: SubscriptionStatus.CANCELLED})
+
+    const getActivePlansAndExpiredSubs = await qb.getMany()
+
+    if(!getActivePlansAndExpiredSubs){
+      return res.status(401).json({
+        success: false,
+         
+      })
+    }
   } catch (error) {
     return;
   }
